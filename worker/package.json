@@ -1,0 +1,24 @@
+{
+  "name": "p0-myadmin-worker",
+  "version": "1.0.0",
+  "description": "Dragon's Mouth gRPC streaming worker for Project0MyAdmin",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "cleanup": "tsx src/cleanup.ts"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@supabase/supabase-js": "^2.49.1",
+    "@triton-one/yellowstone-grpc": "^2.0.0",
+    "dotenv": "^17.2.3",
+    "protobufjs": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
