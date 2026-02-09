@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Project0MyAdmin",
+  title: "Project0MyAdmin | Program Explorer",
   description: "Program explorer for Project 0",
 };
 
