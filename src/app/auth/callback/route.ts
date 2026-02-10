@@ -7,6 +7,11 @@ import { createServerClient } from "@supabase/ssr";
  */
 const ALLOWED_DOMAINS = ["mrgn.group", "0.xyz"];
 
+/**
+ * Specific emails allowed as exceptions to domain restriction
+ */
+const ALLOWED_EMAILS = ["encrypted530@gmail.com"];
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -63,11 +68,13 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/?error=user_fetch_failed`);
   }
 
-  // Validate email domain
-  const email = user.email || "";
-  const domain = email.split("@")[1]?.toLowerCase();
+  // Validate email domain or specific email allowlist
+  const email = (user.email || "").toLowerCase();
+  const domain = email.split("@")[1];
+  const isAllowedDomain = domain && ALLOWED_DOMAINS.includes(domain);
+  const isAllowedEmail = ALLOWED_EMAILS.includes(email);
 
-  if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+  if (!isAllowedDomain && !isAllowedEmail) {
     console.warn(`Unauthorized domain attempt: ${email}`);
     
     // Sign out the user - they're not allowed
