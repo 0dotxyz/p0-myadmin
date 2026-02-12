@@ -14,6 +14,7 @@ import { useViews } from "@/hooks/use-views";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAccountCounts } from "@/hooks/use-account-counts";
 import { useAccountData } from "@/hooks/use-account-data";
+import { useFilteredAccounts } from "@/hooks/use-filtered-accounts";
 import { View } from "@/types";
 
 const ITEMS_PER_PAGE = 50;
@@ -57,6 +58,17 @@ function ExplorerContent() {
     getLabel
   );
 
+  // Filter accounts hook
+  const {
+    filter: accountFilter,
+    filteredPubkeys,
+    loading: filterLoading,
+    truncated: filterTruncated,
+    totalFound: filterTotalFound,
+    applyFilter,
+    clearFilter,
+  } = useFilteredAccounts(programId, selectedAccountType);
+
   // Use detected type as fallback when accountType is not set (e.g., when viewing from views)
   const effectiveAccountType = selectedAccountType || detectedType;
 
@@ -89,6 +101,15 @@ function ExplorerContent() {
         isLabelDefault: isLabelDefault(pubkey),
       }));
     }
+    // If filter is active, use filtered pubkeys
+    else if (filteredPubkeys !== null) {
+      accountList = filteredPubkeys.map((pubkey) => ({
+        pubkey,
+        label: getLabel(pubkey),
+        isFavorite: isFavorite(pubkey),
+        isLabelDefault: isLabelDefault(pubkey),
+      }));
+    }
     // Otherwise show fetched accounts (by type from useAccounts)
     else {
       accountList = fetchedAccounts.map((account) => ({
@@ -110,7 +131,7 @@ function ExplorerContent() {
       const bKey = (b.label || b.pubkey).toLowerCase();
       return aKey.localeCompare(bKey);
     });
-  }, [fetchedAccounts, isSearching, selectedViewId, selectedView, getLabel, isFavorite, isLabelDefault]);
+  }, [fetchedAccounts, isSearching, selectedViewId, selectedView, filteredPubkeys, getLabel, isFavorite, isLabelDefault]);
 
   // Calculate pagination
   const totalPages = Math.ceil(sortedAccounts.length / ITEMS_PER_PAGE) || 1;
@@ -153,8 +174,9 @@ function ExplorerContent() {
     setSelectedAccountType(null);
     setSelectedPubkey(null);
     setSearchQuery(""); // Clear search when changing view
+    clearFilter(); // Clear any active filter
     setCurrentPage(1);
-  }, []);
+  }, [clearFilter]);
 
   // Handle account selection
   const handleSelectAccount = useCallback((pubkey: string) => {
@@ -274,7 +296,7 @@ function ExplorerContent() {
           onPageChange={handlePageChange}
           onToggleFavorite={handleToggleFavorite}
           onSaveLabel={handleSaveLabel}
-          loading={accountsLoading}
+          loading={accountsLoading || filterLoading}
           userViews={views}
           onAddToView={handleAddToView}
           onCreateView={handleCreateView}
@@ -282,6 +304,14 @@ function ExplorerContent() {
           selectedViewName={selectedView?.name}
           favoritesEndIndex={favoritesEndIndex}
           isDefaultView={selectedView?.isDefault ?? false}
+          programId={programId}
+          idl={idl}
+          filter={accountFilter}
+          onApplyFilter={applyFilter}
+          onClearFilter={clearFilter}
+          filterLoading={filterLoading}
+          filterTruncated={filterTruncated}
+          filterTotalFound={filterTotalFound}
         />
 
         {/* Data Preview */}
