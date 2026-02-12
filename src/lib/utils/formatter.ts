@@ -55,6 +55,44 @@ function isByteArray(data: unknown): data is number[] | Record<string, number> {
   return false;
 }
 
+// Helper to decode a byte array as UTF-8 string, trimming at endByte or null terminator
+function decodeUtf8ByteArray(
+  data: number[],
+  endByte?: number
+): string | null {
+  // Determine the actual end of the string
+  // end_*_byte fields indicate the last valid byte index, so we need endByte + 1 for slice length
+  const length = endByte !== undefined && endByte > 0 && endByte < data.length
+    ? endByte + 1
+    : data.findIndex((b) => b === 0);
+  
+  const actualLength = length === -1 ? data.length : length;
+  
+  if (actualLength === 0) return null;
+  
+  try {
+    // Extract valid bytes and decode as UTF-8
+    const bytes = data.slice(0, actualLength);
+    const decoder = new TextDecoder("utf-8", { fatal: false });
+    const decoded = decoder.decode(new Uint8Array(bytes));
+    
+    // Validate that it looks like a reasonable string (mostly printable ASCII or valid UTF-8)
+    // Check if at least 80% of characters are printable
+    const printableCount = decoded.split("").filter((c) => {
+      const code = c.charCodeAt(0);
+      return (code >= 32 && code < 127) || code > 127;
+    }).length;
+    
+    if (printableCount / decoded.length < 0.8) {
+      return null;
+    }
+    
+    return decoded.trim();
+  } catch {
+    return null;
+  }
+}
+
 // Recursive function to parse data into a human-readable format
 // We return 'any' here because the parsed structure mirrors the unknown input structure (IDL data)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,9 +169,38 @@ export function parseData(data: unknown, keyName?: string): any {
     const newObj: any = {};
     // Iterate over object keys safely
     const obj = data as Record<string, unknown>;
+    
+    // Build a map of end_*_byte markers for string byte arrays
+    // Pattern: end_<field_name>_byte -> field_name (e.g., end_ticker_byte -> ticker)
+    const endByteMarkers = new Map<string, number>();
+    for (const key in obj) {
+      const match = key.match(/^end_(.+)_byte$/);
+      if (match) {
+        const fieldName = match[1];
+        const value = obj[key];
+        if (typeof value === "number") {
+          endByteMarkers.set(fieldName, value);
+        }
+      }
+    }
+    
     for (const key in obj) {
       if (key.startsWith("_pad") || key.startsWith("padding")) continue;
-      newObj[key] = parseData(obj[key], key);
+      
+      const value = obj[key];
+      
+      // Check if this is a byte array with a corresponding end_*_byte marker
+      if (endByteMarkers.has(key) && isByteArray(value)) {
+        const endByte = endByteMarkers.get(key);
+        const values = Array.isArray(value) ? value : Object.values(value as object);
+        const decoded = decodeUtf8ByteArray(values as number[], endByte);
+        if (decoded) {
+          newObj[key] = decoded;
+          continue;
+        }
+      }
+      
+      newObj[key] = parseData(value, key);
     }
     return newObj;
   }
