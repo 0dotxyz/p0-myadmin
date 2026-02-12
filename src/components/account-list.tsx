@@ -59,7 +59,7 @@ export interface AccountListProps {
   loading: boolean;
   userViews?: View[];
   onAddToView?: (viewId: string, pubkey: string) => Promise<boolean>;
-  onCreateView?: (name: string) => Promise<View | null>;
+  onCreateView?: (name: string, pubkey?: string) => Promise<View | null>;
   selectedViewId?: string | null;
   selectedViewName?: string;
   /** Index where favorites end in current page (-1 if no favorites at start) */
@@ -121,11 +121,14 @@ export function AccountList({
 
   const handleCreateView = async (name: string) => {
     if (onCreateView && pendingAccountToAdd) {
-      const newView = await onCreateView(name);
-      if (newView && onAddToView) {
-        await onAddToView(newView.id, pendingAccountToAdd);
+      try {
+        // Pass the pending account directly - it will be added during view creation
+        await onCreateView(name, pendingAccountToAdd);
+      } catch (e) {
+        console.error("Failed to create view:", e);
+      } finally {
+        setPendingAccountToAdd(null);
       }
-      setPendingAccountToAdd(null);
     }
   };
 

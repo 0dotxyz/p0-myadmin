@@ -32,7 +32,7 @@ function ExplorerContent() {
   // Data hooks
   const { getLabel, isLabelDefault, setLabel, loading: labelsLoading } = useLabels(programId);
   const { isFavorite, toggleFavorite, loading: favoritesLoading } = useFavorites(programId);
-  const { views, createView, updateView, loading: viewsLoading, refetch: refetchViews } = useViews(programId);
+  const { views, createView, updateView, deleteView, loading: viewsLoading, refetch: refetchViews } = useViews(programId);
   const { counts: accountCounts, loading: countsLoading } = useAccountCounts(programId);
   
   // Pass search query to useAccounts for integrated search (returns full unpaginated list)
@@ -160,6 +160,13 @@ function ExplorerContent() {
   const handleSelectAccount = useCallback((pubkey: string) => {
     setSelectedPubkey(pubkey);
     
+    // If searching, clear account type to let auto-detection work
+    // This allows clicking search results that are different types than the current filter
+    if (searchQuery) {
+      setSelectedAccountType(null);
+      return;
+    }
+    
     // If we don't have an account type selected, try to infer from the view
     if (!selectedAccountType && selectedView) {
       const viewAccount = selectedView.accounts?.find((a) => a.pubkey === pubkey);
@@ -167,7 +174,7 @@ function ExplorerContent() {
         setSelectedAccountType(viewAccount.type);
       }
     }
-  }, [selectedAccountType, selectedView]);
+  }, [selectedAccountType, selectedView, searchQuery]);
 
   // Handle toggle favorite
   const handleToggleFavorite = useCallback(async (pubkey: string) => {
@@ -188,14 +195,31 @@ function ExplorerContent() {
     return success;
   }, [updateView, selectedAccountType]);
 
-  // Handle create view
-  const handleCreateView = useCallback(async (name: string): Promise<View | null> => {
-    const view = await createView(name);
+  // Handle create view (optionally with an initial account to add)
+  const handleCreateView = useCallback(async (name: string, pubkey?: string): Promise<View | null> => {
+    const initialAccounts = pubkey 
+      ? [{ pubkey, type: selectedAccountType || undefined }] 
+      : undefined;
+    const view = await createView(name, initialAccounts);
     if (view) {
       await refetchViews();
     }
     return view;
-  }, [createView, refetchViews]);
+  }, [createView, refetchViews, selectedAccountType]);
+
+  // Handle rename view
+  const handleRenameView = useCallback(async (viewId: string, newName: string) => {
+    await updateView(viewId, { name: newName });
+  }, [updateView]);
+
+  // Handle delete view
+  const handleDeleteView = useCallback(async (viewId: string) => {
+    // If deleting the currently selected view, deselect it first
+    if (selectedViewId === viewId) {
+      setSelectedViewId(null);
+    }
+    await deleteView(viewId);
+  }, [deleteView, selectedViewId]);
 
   // Search handler - debouncing is handled in useAccounts
   const handleSearchChange = useCallback((query: string) => {
@@ -232,6 +256,8 @@ function ExplorerContent() {
           views={views}
           selectedViewId={selectedViewId}
           onSelectView={handleSelectView}
+          onRenameView={handleRenameView}
+          onDeleteView={handleDeleteView}
         />
 
         {/* Account List */}
