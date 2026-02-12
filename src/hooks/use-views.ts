@@ -24,7 +24,7 @@ interface UseViewsResult {
   error: string | null;
   getView: (viewId: string) => View | undefined;
   getViewAccounts: (viewId: string) => Promise<ViewAccount[]>;
-  createView: (name: string) => Promise<View | null>;
+  createView: (name: string, initialAccounts?: ViewAccount[]) => Promise<View | null>;
   updateView: (viewId: string, updates: { name?: string; add?: ViewAccount[]; remove?: string[] }) => Promise<boolean>;
   deleteView: (viewId: string) => Promise<void>;
   refetch: () => Promise<void>;
@@ -98,8 +98,8 @@ export function useViews(programId: ProgramId): UseViewsResult {
     return data.accounts || [];
   }, [getToken]);
 
-  // Create a new user view
-  const createView = useCallback(async (name: string): Promise<View | null> => {
+  // Create a new user view, optionally with initial accounts
+  const createView = useCallback(async (name: string, initialAccounts?: ViewAccount[]): Promise<View | null> => {
     if (!user) {
       console.error("Must be authenticated to create views");
       return null;
@@ -128,6 +128,25 @@ export function useViews(programId: ProgramId): UseViewsResult {
 
       const data = await res.json();
       const newView = data.view;
+      
+      // If initial accounts provided, add them to the view
+      if (initialAccounts?.length) {
+        try {
+          await fetch(`/api/views/${newView.id}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ add: initialAccounts }),
+          });
+          // Update the newView object with accounts for local state
+          newView.accounts = initialAccounts;
+        } catch (e) {
+          console.error("Error adding initial accounts to view:", e);
+          // View was created, just accounts weren't added
+        }
+      }
       
       // Add to local state
       setViews(prev => [...prev, newView]);
