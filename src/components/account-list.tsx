@@ -34,6 +34,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { View } from "@/types";
 import { CreateViewDialog } from "./create-view-dialog";
 import { SignInAlertDialog } from "./sign-in-alert-dialog";
+import { AccountFilterButton } from "./account-filter";
+import type { Idl } from "@coral-xyz/anchor";
+import type { ProgramId } from "@/lib/config";
+import type { AccountFilter } from "@/hooks/use-filtered-accounts";
 
 export interface AccountMeta {
   pubkey: string;
@@ -66,6 +70,15 @@ export interface AccountListProps {
   favoritesEndIndex?: number;
   /** Whether the current view is a default (read-only) view */
   isDefaultView?: boolean;
+  /** Filter-related props */
+  programId?: ProgramId;
+  idl?: Idl;
+  filter?: AccountFilter | null;
+  onApplyFilter?: (filter: AccountFilter) => void;
+  onClearFilter?: () => void;
+  filterLoading?: boolean;
+  filterTruncated?: boolean;
+  filterTotalFound?: number;
 }
 
 export function AccountList({
@@ -89,6 +102,14 @@ export function AccountList({
   selectedViewName,
   favoritesEndIndex = -1,
   isDefaultView = false,
+  programId,
+  idl,
+  filter,
+  onApplyFilter,
+  onClearFilter,
+  filterLoading = false,
+  filterTruncated = false,
+  filterTotalFound = 0,
 }: AccountListProps) {
   const { user } = useAuth();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
@@ -139,7 +160,7 @@ export function AccountList({
 
   const AccountItem = ({ account }: { account: AccountMeta }) => {
     const isEditing = editingAccount === account.pubkey;
-    
+
     // Can edit label only if: not in default view AND label is not a default label
     const canEditLabel = canEdit && !account.isLabelDefault;
 
@@ -178,7 +199,7 @@ export function AccountList({
             "shrink-0 transition-colors",
             canEdit
               ? "text-muted-foreground hover:text-primary"
-              : "text-muted-foreground/50 cursor-not-allowed"
+              : "text-muted-foreground/50 cursor-not-allowed",
           )}
           onClick={handleFavoriteClick}
           disabled={!canEdit}
@@ -353,10 +374,12 @@ export function AccountList({
   const hasFavoritesSection = favoritesEndIndex > 0;
   // If favoritesEndIndex is -1, it means no favorites at start of page (could be a later page)
   const showFavoritesHeader = hasFavoritesSection;
-  
+
   // Split accounts for rendering
   const favs = hasFavoritesSection ? accounts.slice(0, favoritesEndIndex) : [];
-  const rest = hasFavoritesSection ? accounts.slice(favoritesEndIndex) : accounts;
+  const rest = hasFavoritesSection
+    ? accounts.slice(favoritesEndIndex)
+    : accounts;
 
   return (
     <div className="flex w-[540px] flex-col border-r border-border bg-card h-full">
@@ -382,28 +405,72 @@ export function AccountList({
           {programName}
         </div>
 
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search pubkey or label..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search pubkey or label..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {/* Filter button - only show when account type selected and not viewing a view */}
+          {accountType &&
+            !selectedViewId &&
+            programId &&
+            idl &&
+            onApplyFilter &&
+            onClearFilter && (
+              <AccountFilterButton
+                programId={programId}
+                accountType={accountType}
+                idl={idl}
+                filter={filter ?? null}
+                onApplyFilter={onApplyFilter}
+                onClearFilter={onClearFilter}
+                loading={filterLoading}
+              />
+            )}
         </div>
       </div>
 
       {/* Account List */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {searchQuery
-                ? "Search Results"
-                : selectedViewId
-                  ? selectedViewName || "View"
-                  : accountType || "Select Type"}
-            </h2>
+          <div className="mb-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                {searchQuery
+                  ? "Search Results"
+                  : selectedViewId
+                    ? selectedViewName || "View"
+                    : filter
+                      ? "Filtered Results"
+                      : accountType || "Select Type"}
+              </h2>
+            </div>
+
+            {/* Active filter indicator */}
+            {filter && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Filter:</span>
+                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                    {filter.fieldLabel} ={" "}
+                    {filter.value.length > 20
+                      ? filter.value.slice(0, 20) + "..."
+                      : filter.value}
+                  </code>
+                </div>
+                {filterTruncated && (
+                  <span className="text-amber-600 dark:text-amber-400 text-xs">
+                    (showing {accounts.length} of {filterTotalFound})
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <Card className="p-4 border-none shadow-none bg-transparent">
