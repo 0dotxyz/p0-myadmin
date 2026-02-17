@@ -1,10 +1,10 @@
-# Project0MyAdmin
+# SolanaMyAdmin
 
-A program explorer for Project 0. Browse, search, and track on-chain account data with labels, favorites, and historical snapshots.
+A Solana program explorer. Browse, search, and track on-chain account data with labels, favorites, and historical snapshots.
 
 ## Architecture
 
-Project0MyAdmin follows a **"Lightweight Index, Heavy Client"** pattern:
+SolanaMyAdmin follows a **"Lightweight Index, Heavy Client"** pattern:
 
 - **Supabase** stores only pubkeys, discriminators, and change hashes (lightweight index)
 - **Binary account data** is fetched just-in-time from Solana RPC (heavy client)
@@ -167,7 +167,7 @@ worker/                         # Standalone gRPC streaming worker
 
 ## Auth
 
-- **Google OAuth** -- restricted to `mrgn.group` and `0.xyz` email domains
+- **Google OAuth** -- any Google account can sign in
 - **Read access is public** -- anyone can browse account data
 - **Write operations require auth** -- labels, favorites, views need sign-in
 - API routes authenticate via `Authorization: Bearer <token>` headers

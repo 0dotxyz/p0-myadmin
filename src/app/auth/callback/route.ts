@@ -2,16 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /**
- * Allowed email domains for authentication
- * Only mrgn.group and 0.xyz employees can sign in
+ * OAuth callback handler for Google authentication
  */
-const ALLOWED_DOMAINS = ["mrgn.group", "0.xyz"];
-
-/**
- * Specific emails allowed as exceptions to domain restriction
- */
-const ALLOWED_EMAILS = ["REDACTED_EMAIL_1", "REDACTED_EMAIL_2"];
-
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -57,7 +49,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/?error=auth_failed`);
   }
 
-  // Get the user to check their email domain
+  // Get the user to verify authentication succeeded
   const {
     data: { user },
     error: userError,
@@ -68,29 +60,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/?error=user_fetch_failed`);
   }
 
-  // Validate email domain or specific email allowlist
-  const email = (user.email || "").toLowerCase();
-  const domain = email.split("@")[1];
-  const isAllowedDomain = domain && ALLOWED_DOMAINS.includes(domain);
-  const isAllowedEmail = ALLOWED_EMAILS.includes(email);
-
-  if (!isAllowedDomain && !isAllowedEmail) {
-    console.warn(`Unauthorized domain attempt: ${email}`);
-    
-    // Sign out the user - they're not allowed
-    await supabase.auth.signOut();
-    
-    // Clear all Supabase auth cookies (they use dynamic names like sb-<project-ref>-auth-token)
-    response.cookies.getAll().forEach((cookie) => {
-      if (cookie.name.startsWith("sb-")) {
-        response.cookies.delete(cookie.name);
-      }
-    });
-    
-    return NextResponse.redirect(`${origin}/?error=unauthorized_domain`);
-  }
-
-  // Success! User is authenticated and has valid domain
-  console.log(`User authenticated: ${email}`);
+  // Success! User is authenticated
+  console.log(`User authenticated: ${user.email}`);
   return response;
 }

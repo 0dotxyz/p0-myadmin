@@ -1,7 +1,7 @@
 {
-  "name": "p0-myadmin-worker",
+  "name": "solanamyadmin-worker",
   "version": "1.0.0",
-  "description": "Dragon's Mouth gRPC streaming worker for Project0MyAdmin",
+  "description": "Dragon's Mouth gRPC streaming worker for SolanaMyAdmin",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

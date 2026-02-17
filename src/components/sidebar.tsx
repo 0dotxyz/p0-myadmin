@@ -152,7 +152,7 @@ export function Sidebar({
           <div className="flex items-center gap-2">
             <Logo size={26} className="text-primary" />
             <span className="text-lg font-semibold text-sidebar-foreground">
-              Project0MyAdmin
+              SolanaMyAdmin
             </span>
           </div>
         )}

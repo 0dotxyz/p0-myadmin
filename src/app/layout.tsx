@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Project0MyAdmin | Program Explorer",
-  description: "Program explorer for Project 0",
+  title: "SolanaMyAdmin | Program Explorer",
+  description: "The operating system for Solana programs",
 };
 
 export default function RootLayout({

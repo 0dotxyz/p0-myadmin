@@ -7,8 +7,7 @@ import { User, Session } from "@supabase/supabase-js";
 /**
  * Authentication hook - Google OAuth only
  * 
- * Domain restriction (mrgn.group, 0.xyz) is enforced in the auth callback,
- * not here. This hook just manages the auth state.
+ * This hook manages the auth state.
  */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);

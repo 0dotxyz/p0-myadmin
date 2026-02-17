@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Auth Model:
  * - READ operations are public (anyone can view account data)
- * - WRITE operations require Google OAuth (mrgn.group/0.xyz domains only)
+ * - WRITE operations require Google OAuth
  *
  * This middleware refreshes the auth session on each request.
  * Route protection is handled at the API level, not here.

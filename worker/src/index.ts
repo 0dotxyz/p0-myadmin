@@ -1,5 +1,5 @@
 /**
- * Project0MyAdmin Streaming Worker
+ * SolanaMyAdmin Streaming Worker
  *
  * Connects to Dragon's Mouth gRPC and streams account changes to Supabase.
  * Simplified for internal tool - subscribes to both marginfi programs on startup.
@@ -29,7 +29,7 @@ function logStats(): void {
 
 async function main() {
   console.log("=".repeat(60));
-  console.log("Project0MyAdmin Streaming Worker");
+  console.log("SolanaMyAdmin Streaming Worker");
   console.log("=".repeat(60));
 
   // Validate configuration

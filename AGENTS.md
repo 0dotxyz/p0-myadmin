@@ -1,10 +1,10 @@
 # AGENTS.md - AI Coding Agent Guidelines
 
-Guidelines for AI coding agents working in the Project0MyAdmin codebase.
+Guidelines for AI coding agents working in the SolanaMyAdmin codebase.
 
 ## Project Overview
 
-Project0MyAdmin is a Solana program explorer built with Next.js 16 (App Router), React 19, and TypeScript. It follows a "Lightweight Index, Heavy Client" architecture - indexing only pubkeys/types in Supabase, with JIT binary data fetching from Solana RPC.
+SolanaMyAdmin is a Solana program explorer built with Next.js 16 (App Router), React 19, and TypeScript. It follows a "Lightweight Index, Heavy Client" architecture - indexing only pubkeys/types in Supabase, with JIT binary data fetching from Solana RPC.
 
 ## Build & Development Commands
 
